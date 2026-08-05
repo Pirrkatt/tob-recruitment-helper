@@ -117,7 +117,15 @@ public class TobRecruitHelperPlugin extends Plugin
 		}
 		else
 		{
-			activeApplicants.clear();
+			if (!activeApplicants.isEmpty())
+			{
+				activeApplicants.clear();
+
+				if (panel != null)
+				{
+					panel.rebuild(activeApplicants);
+				}
+			}
 		}
 	}
 
