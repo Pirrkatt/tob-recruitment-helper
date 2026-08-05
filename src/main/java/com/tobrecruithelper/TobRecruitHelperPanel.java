@@ -34,7 +34,7 @@ public class TobRecruitHelperPanel extends PluginPanel
 	private final ItemManager itemManager;
 	private final SpriteManager spriteManager;
 	private final Map<Weapon, AsyncBufferedImage> weaponIcons = new HashMap<>();
-	private final Set<String> expandedApplicants = new HashSet<>();
+	private final Set<String> collapsedApplicants = new HashSet<>();
 
 	@Inject
 	public TobRecruitHelperPanel(ItemManager itemManager, SpriteManager spriteManager)
@@ -88,7 +88,7 @@ public class TobRecruitHelperPanel extends PluginPanel
 			headerLabel.setText("<html>Party Applicants <font color='#a5a5a5'>(" + applicants.size() + ")</font></html>");
 
 			// Clean up expansion tracking for applicants who left
-			expandedApplicants.retainAll(applicants.keySet());
+			collapsedApplicants.retainAll(applicants.keySet());
 
 			if (applicants.isEmpty())
 			{
@@ -111,7 +111,7 @@ public class TobRecruitHelperPanel extends PluginPanel
 				for (Map.Entry<String, ApplicantInfo> entry : applicants.entrySet())
 				{
 					String applicantName = entry.getKey();
-					boolean isExpanded = expandedApplicants.contains(applicantName);
+					boolean isExpanded = !collapsedApplicants.contains(applicantName);
 
 					applicantsListPanel.add(new ApplicantBoxPanel(
 						applicantName,
@@ -123,11 +123,11 @@ public class TobRecruitHelperPanel extends PluginPanel
 				expanded -> {
 							if (expanded)
 							{
-								expandedApplicants.add(applicantName);
+								collapsedApplicants.remove(applicantName);
 							}
 							else
 							{
-								expandedApplicants.remove(applicantName);
+								collapsedApplicants.add(applicantName);
 							}
 						}
 					));
