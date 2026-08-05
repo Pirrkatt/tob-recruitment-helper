@@ -38,7 +38,9 @@ import net.runelite.api.events.GameTick;
 
 @Slf4j
 @PluginDescriptor(
-	name = "ToB Recruitment Helper"
+	name = "ToB Recruitment Helper",
+	description = "Highlights ToB applicants and provides useful information.",
+	tags = {"tob", "notice", "board", "apply", "highlight","team","party","gear", "theatre","of","blood","inspect","chat"}
 )
 public class TobRecruitHelperPlugin extends Plugin
 {

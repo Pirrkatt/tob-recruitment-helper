@@ -1,6 +1,6 @@
 # ToB Recruitment Helper
 
-A RuneLite plugin that helps find Theatre of Blood teams by highlighting applicants in chat and inspecting their gear.
+A RuneLite plugin that helps you find Theatre of Blood teammates by highlighting applicants in chat and inspecting their gear.
 
 ## Features
 
