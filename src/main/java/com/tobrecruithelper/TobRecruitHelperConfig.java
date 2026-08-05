@@ -30,4 +30,15 @@ public interface TobRecruitHelperConfig extends Config
 	{
 		return new Color(255, 190, 86);
 	}
+
+	@ConfigItem(
+		keyName = "showRoleLabels",
+		name = "Show role labels",
+		description = "Shows applicant roles next to player names in the Theatre of Blood party interface",
+		position = 3
+	)
+	default boolean showRoleLabels()
+	{
+		return true;
+	}
 }
