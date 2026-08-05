@@ -33,16 +33,27 @@ public class TobRecruitHelperPlugin extends Plugin
 	public static final int PARTY_COMPONENT_ID = 50;
 	public static final int APPLICANTS_CHILD_ID = 42;
 
-	private final Set<String> applicantsList = new HashSet<>();
-	private final Map<String, Role> applicantRoles = new HashMap<>();
+	private final Map<String, Role> activeApplicants = new HashMap<>();
 
 	private enum Role
 	{
-		NFRZ,
-		SFRZ,
-		FRZ,
-		MDPS,
-		RDPS
+		NFRZ("Nfrz", "0096FF"),
+		SFRZ("Sfrz", "0096FF"),
+		FRZ("Frz", "0096FF"),
+		MDPS("Mdps", "D22B2B"),
+		RDPS("Rdps", "0BDA51");
+
+		private final String label;
+		private final String colorHex;
+
+		Role(String label, String colorHex)
+		{
+			this.label = label;
+			this.colorHex = colorHex;
+		}
+
+		public String getLabel() { return label; }
+		public String getColorHex() { return colorHex; }
 	}
 
 	@Inject
@@ -57,8 +68,7 @@ public class TobRecruitHelperPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		applicantsList.clear();
-		applicantRoles.clear();
+		activeApplicants.clear();
 	}
 
 	@Subscribe
@@ -66,8 +76,7 @@ public class TobRecruitHelperPlugin extends Plugin
 	{
 		if (event.getGameState() != GameState.LOGGED_IN)
 		{
-			applicantsList.clear();
-			applicantRoles.clear();
+			activeApplicants.clear();
 		}
 	}
 
@@ -111,7 +120,7 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		String jagexName = Text.toJagexName(sender);
 
-		if (!applicantsList.contains(jagexName))
+		if (!activeApplicants.containsKey(jagexName))
 		{
 			return;
 		}
@@ -121,8 +130,7 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		if (role != null)
 		{
-			applicantRoles.put(jagexName, role);
-
+			activeApplicants.put(jagexName, role);
 			clientThread.invokeLater(this::updateLobbyRoles);
 		}
 
@@ -170,11 +178,14 @@ public class TobRecruitHelperPlugin extends Plugin
 			}
 		}
 
-		applicantsList.clear();
-		applicantsList.addAll(currentApplicants);
+		// Remove players who left the lobby
+		activeApplicants.keySet().retainAll(currentApplicants);
 
-		// Remove roles from players who left the lobby
-		applicantRoles.keySet().removeIf(name -> !currentApplicants.contains(name));
+		// Add new players with a null role (meaning they haven't spoken yet)
+		for (String applicant : currentApplicants)
+		{
+			activeApplicants.putIfAbsent(applicant, null);
+		}
 
 		updateLobbyRoles();
 	}
@@ -208,13 +219,13 @@ public class TobRecruitHelperPlugin extends Plugin
 				continue;
 			}
 
-			Role role = applicantRoles.get(Text.toJagexName(originalName));
+			Role role = activeApplicants.get(Text.toJagexName(originalName));
 
 			if (role != null)
 			{
 				child.setText(
-					originalName + " <col=" + getRoleColor(role) + ">("
-						+ roleToString(role) + ")</col>"
+					originalName + " <col=" + role.getColorHex() + ">("
+						+ role.getLabel() + ")</col>"
 				);
 			}
 			else
@@ -263,44 +274,6 @@ public class TobRecruitHelperPlugin extends Plugin
 		}
 
 		return null;
-	}
-
-	private String getRoleColor(Role role)
-	{
-		switch (role)
-		{
-			case MDPS:
-				return "D22B2B"; // Red
-
-			case RDPS:
-				return "0BDA51"; // Green
-
-			case NFRZ:
-			case SFRZ:
-			case FRZ:
-				return "0096FF"; // Blue
-		}
-
-		return "FFFFFF";
-	}
-
-	private String roleToString(Role role)
-	{
-		switch (role)
-		{
-			case NFRZ:
-				return "Nfrz";
-			case SFRZ:
-				return "Sfrz";
-			case FRZ:
-				return "Frz";
-			case MDPS:
-				return "Mdps";
-			case RDPS:
-				return "Rdps";
-		}
-
-		return "";
 	}
 
 	private String removeRoleLabel(String text)
