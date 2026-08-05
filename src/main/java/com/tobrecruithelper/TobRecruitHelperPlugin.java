@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -142,6 +143,14 @@ public class TobRecruitHelperPlugin extends Plugin
 		if (event.getGroupId() == PARTY_COMPONENT_ID)
 		{
 			clientThread.invokeLater(this::scanApplicants);
+
+			// Automatically open the side panel when creating or opening a party lobby
+			if (config.showSidePanel() && navButton != null)
+			{
+				SwingUtilities.invokeLater(() -> {
+					clientToolbar.openPanel(navButton);
+				});
+			}
 		}
 	}
 
