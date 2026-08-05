@@ -249,8 +249,17 @@ public class TobRecruitHelperPlugin extends Plugin
 	{
 		Widget applicants = client.getWidget(PARTY_COMPONENT_ID, APPLICANTS_CHILD_ID);
 
-		if (applicants == null || applicants.getChildren() == null)
+		// Clear applicants if the widget is closed or hidden
+		if (applicants == null || applicants.getChildren() == null || applicants.isHidden())
 		{
+			if (!activeApplicants.isEmpty())
+			{
+				activeApplicants.clear();
+				if (panel != null)
+				{
+					panel.rebuild(activeApplicants);
+				}
+			}
 			return;
 		}
 
@@ -264,17 +273,26 @@ public class TobRecruitHelperPlugin extends Plugin
 
 				if (name != null && !name.isEmpty() && !name.equals("-"))
 				{
-					currentApplicants.add(Text.toJagexName(name));
+					// Clean the name from any tags/icons we added previously
+					String cleanName = ChatParser.removeRoleLabel(Text.removeTags(name)).trim();
+					currentApplicants.add(Text.toJagexName(cleanName));
 				}
 			}
 		}
 
-		// Remove players who left the lobby
-		activeApplicants.keySet().retainAll(currentApplicants);
+		// retainAll returns true if it successfully removed players who left
+		boolean panelNeedsUpdate = activeApplicants.keySet().retainAll(currentApplicants);
 
 		for (String applicant : currentApplicants)
 		{
-			ApplicantInfo info = activeApplicants.computeIfAbsent(applicant, k -> new ApplicantInfo());
+			// Check if it's a new applicant joining
+			if (!activeApplicants.containsKey(applicant))
+			{
+				activeApplicants.put(applicant, new ApplicantInfo());
+				panelNeedsUpdate = true;
+			}
+
+			ApplicantInfo info = activeApplicants.get(applicant);
 
 			// Check if applicant is loaded in world view to fetch equipment
 			Player player = findNearbyPlayer(applicant);
@@ -285,7 +303,12 @@ public class TobRecruitHelperPlugin extends Plugin
 					int itemId = player.getPlayerComposition().getEquipmentId(kitType);
 					if (itemId != -1)
 					{
-						info.getEquipment().put(kitType, itemId);
+						int currentItemId = info.getEquipment().getOrDefault(kitType, -1);
+						if (currentItemId != itemId)
+						{
+							info.getEquipment().put(kitType, itemId);
+							panelNeedsUpdate = true;
+						}
 					}
 				}
 			}
@@ -293,7 +316,7 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		updateLobbyRoles();
 
-		if (panel != null)
+		if (panelNeedsUpdate && panel != null)
 		{
 			panel.rebuild(activeApplicants);
 		}
