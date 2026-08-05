@@ -2,7 +2,11 @@ package com.tobrecruithelper;
 
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -25,16 +29,11 @@ import net.runelite.client.util.Text;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.api.MessageNode;
 import net.runelite.api.events.ChatMessage;
-import java.util.HashMap;
-import java.util.Map;
 import net.runelite.client.events.ConfigChanged;
-import java.util.Arrays;
 import net.runelite.api.ItemID;
 import net.runelite.api.IndexedSprite;
 import net.runelite.client.game.ItemManager;
-
-import java.util.HashSet;
-import java.util.Set;
+import net.runelite.api.events.GameTick;
 
 @Slf4j
 @PluginDescriptor(
@@ -51,6 +50,8 @@ public class TobRecruitHelperPlugin extends Plugin
 	private int sraIconIdx = -1;
 
 	private NavigationButton navButton;
+	private boolean panelAdded = false;
+	private static final int TOB_LOBBY_REGION = 14642;
 
 	@Inject
 	private Client client;
@@ -82,7 +83,7 @@ public class TobRecruitHelperPlugin extends Plugin
 		AsyncBufferedImage icon = itemManager.getImage(ItemID.SCYTHE_OF_VITUR);
 
 		icon.onLoaded(() -> clientThread.invokeLater(() -> {
-			if (config.showSidePanel() && navButton == null)
+			if (navButton == null)
 			{
 				navButton = NavigationButton.builder()
 					.tooltip("ToB Recruitment Helper")
@@ -91,7 +92,7 @@ public class TobRecruitHelperPlugin extends Plugin
 					.panel(panel)
 					.build();
 
-				clientToolbar.addNavigation(navButton);
+				updatePanelVisibility();
 			}
 		}));
 	}
@@ -130,6 +131,12 @@ public class TobRecruitHelperPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		updatePanelVisibility();
+	}
+
+	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		if (event.getGroupId() == PARTY_COMPONENT_ID)
@@ -151,30 +158,9 @@ public class TobRecruitHelperPlugin extends Plugin
 			clientThread.invokeLater(this::updateLobbyRoles);
 		}
 
-		if (event.getKey().equals("showSidePanel"))
+		if (event.getKey().equals("showSidePanel") || event.getKey().equals("hideOutsideTob"))
 		{
-			if (config.showSidePanel())
-			{
-				if (navButton == null)
-				{
-					AsyncBufferedImage icon = itemManager.getImage(ItemID.SCYTHE_OF_VITUR);
-					navButton = NavigationButton.builder()
-						.tooltip("ToB Recruitment Helper")
-						.icon(icon)
-						.priority(99)
-						.panel(panel)
-						.build();
-					clientToolbar.addNavigation(navButton);
-				}
-			}
-			else
-			{
-				if (navButton != null)
-				{
-					clientToolbar.removeNavigation(navButton);
-					navButton = null;
-				}
-			}
+			clientThread.invokeLater(this::updatePanelVisibility);
 		}
 	}
 
@@ -470,6 +456,43 @@ public class TobRecruitHelperPlugin extends Plugin
 			}
 		}
 		return null;
+	}
+
+	private boolean isAtTob()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN || client.getLocalPlayer() == null)
+		{
+			return false;
+		}
+
+		return client.getLocalPlayer().getWorldLocation().getRegionID() == TOB_LOBBY_REGION;
+	}
+
+	private void updatePanelVisibility()
+	{
+		if (navButton == null)
+		{
+			return;
+		}
+
+		boolean shouldShow = config.showSidePanel();
+
+		// If the main toggle is on, but "Hide outside ToB" is also on, verify location
+		if (shouldShow && config.hidePanelOutsideTob())
+		{
+			shouldShow = isAtTob();
+		}
+
+		if (shouldShow && !panelAdded)
+		{
+			clientToolbar.addNavigation(navButton);
+			panelAdded = true;
+		}
+		else if (!shouldShow && panelAdded)
+		{
+			clientToolbar.removeNavigation(navButton);
+			panelAdded = false;
+		}
 	}
 
 	@Provides

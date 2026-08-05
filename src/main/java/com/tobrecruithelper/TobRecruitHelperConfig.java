@@ -52,7 +52,7 @@ public interface TobRecruitHelperConfig extends Config
 
 	@ConfigItem(
 		keyName = "applicantHighlightColor",
-		name = "Applicant highlight color",
+		name = "Applicant chat color",
 		description = "Color used to highlight Theatre of Blood applicants in chat",
 		position = 2,
 		section = chatSection
@@ -104,5 +104,17 @@ public interface TobRecruitHelperConfig extends Config
 	default boolean showSidePanel()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "hidePanelOutsideTob",
+		name = "Hide panel outside ToB",
+		description = "Hides the side panel when you are not in the Theatre of Blood lobby",
+		position = 2,
+		section = sidePanelSection
+	)
+	default boolean hidePanelOutsideTob()
+	{
+		return false;
 	}
 }
