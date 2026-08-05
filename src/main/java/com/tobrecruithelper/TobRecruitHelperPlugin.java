@@ -20,6 +20,12 @@ import net.runelite.api.events.ChatMessage;
 import java.util.HashMap;
 import java.util.Map;
 import net.runelite.client.events.ConfigChanged;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import net.runelite.api.ItemID;
+import net.runelite.api.IndexedSprite;
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.util.ImageUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,28 +39,10 @@ public class TobRecruitHelperPlugin extends Plugin
 	public static final int PARTY_COMPONENT_ID = 50;
 	public static final int APPLICANTS_CHILD_ID = 42;
 
-	private final Map<String, Role> activeApplicants = new HashMap<>();
+	private final Map<String, ApplicantInfo> activeApplicants = new HashMap<>();
 
-	private enum Role
-	{
-		NFRZ("Nfrz", "0096FF"),
-		SFRZ("Sfrz", "0096FF"),
-		FRZ("Frz", "0096FF"),
-		MDPS("Mdps", "D22B2B"),
-		RDPS("Rdps", "0BDA51");
-
-		private final String label;
-		private final String colorHex;
-
-		Role(String label, String colorHex)
-		{
-			this.label = label;
-			this.colorHex = colorHex;
-		}
-
-		public String getLabel() { return label; }
-		public String getColorHex() { return colorHex; }
-	}
+	private int scytheIconIdx = -1;
+	private int sraIconIdx = -1;
 
 	@Inject
 	private Client client;
@@ -65,6 +53,15 @@ public class TobRecruitHelperPlugin extends Plugin
 	@Inject
 	private TobRecruitHelperConfig config;
 
+	@Inject
+	private ItemManager itemManager;
+
+	@Override
+	protected void startUp()
+	{
+		clientThread.invokeLater(this::loadWeaponIcons);
+	}
+
 	@Override
 	protected void shutDown()
 	{
@@ -74,7 +71,11 @@ public class TobRecruitHelperPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (event.getGameState() != GameState.LOGGED_IN)
+		if (event.getGameState() == GameState.LOGGED_IN)
+		{
+			clientThread.invokeLater(this::loadWeaponIcons);
+		}
+		else
 		{
 			activeApplicants.clear();
 		}
@@ -97,7 +98,7 @@ public class TobRecruitHelperPlugin extends Plugin
 			return;
 		}
 
-		if (event.getKey().equals("showRoleLabels"))
+		if (event.getKey().equals("showRoleLabels") || event.getKey().equals("showWeaponIcons"))
 		{
 			clientThread.invokeLater(this::updateLobbyRoles);
 		}
@@ -125,12 +126,27 @@ public class TobRecruitHelperPlugin extends Plugin
 			return;
 		}
 
-		// Always track roles
-		Role role = parseRole(chatMessage.getMessage());
+		ApplicantInfo info = activeApplicants.get(jagexName);
 
-		if (role != null)
+		Role role = parseRole(chatMessage.getMessage());
+		Weapon weapon = parseWeapon(chatMessage.getMessage());
+
+		boolean updated = false;
+
+		if (role != null && info.getRole() != role)
 		{
-			activeApplicants.put(jagexName, role);
+			info.setRole(role);
+			updated = true;
+		}
+
+		if (weapon != null && info.getWeapon() != weapon)
+		{
+			info.setWeapon(weapon);
+			updated = true;
+		}
+
+		if (updated)
+		{
 			clientThread.invokeLater(this::updateLobbyRoles);
 		}
 
@@ -184,7 +200,7 @@ public class TobRecruitHelperPlugin extends Plugin
 		// Add new players with a null role (meaning they haven't spoken yet)
 		for (String applicant : currentApplicants)
 		{
-			activeApplicants.putIfAbsent(applicant, null);
+			activeApplicants.putIfAbsent(applicant, new ApplicantInfo());
 		}
 
 		updateLobbyRoles();
@@ -206,32 +222,57 @@ public class TobRecruitHelperPlugin extends Plugin
 				continue;
 			}
 
-			String originalName = removeRoleLabel(Text.removeTags(child.getText()));
+			String originalName = removeRoleLabel(Text.removeTags(child.getText()).trim());
 
 			if (originalName.isEmpty() || originalName.equals("-"))
 			{
 				continue;
 			}
 
-			if (!config.showRoleLabels())
+			ApplicantInfo info = activeApplicants.get(Text.toJagexName(originalName));
+
+			// If player isn't tracked or has no extra info yet, show plain name
+			if (info == null)
 			{
 				child.setText(originalName);
 				continue;
 			}
 
-			Role role = activeApplicants.get(Text.toJagexName(originalName));
+			StringBuilder text = new StringBuilder(originalName);
 
-			if (role != null)
+			// Append Role tag if enabled and present
+			if (config.showRoleLabels() && info.getRole() != null)
 			{
-				child.setText(
-					originalName + " <col=" + role.getColorHex() + ">("
-						+ role.getLabel() + ")</col>"
-				);
+				Role role = info.getRole();
+				text.append(" <col=").append(role.getColorHex()).append(">(")
+					.append(role.getLabel()).append(")</col>");
 			}
-			else
+
+			// Append Weapon icon if enabled and present
+			if (config.showWeaponIcons() && info.getWeapon() != null)
 			{
-				child.setText(originalName);
+				int iconIdx = getWeaponIconIndex(info.getWeapon());
+
+				if (iconIdx != -1)
+				{
+					text.append(" <img=").append(iconIdx).append(">");
+				}
 			}
+
+			child.setText(text.toString());
+		}
+	}
+
+	private int getWeaponIconIndex(Weapon weapon)
+	{
+		switch (weapon)
+		{
+			case SCYTHE:
+				return scytheIconIdx;
+			case SOULREAPER_AXE:
+				return sraIconIdx;
+			default:
+				return -1;
 		}
 	}
 
@@ -243,7 +284,7 @@ public class TobRecruitHelperPlugin extends Plugin
 		);
 	}
 
-	private Role parseRole(String message)
+	Role parseRole(String message)
 	{
 		String lower = message.toLowerCase();
 
@@ -276,9 +317,162 @@ public class TobRecruitHelperPlugin extends Plugin
 		return null;
 	}
 
+	Weapon parseWeapon(String message)
+	{
+		String lower = message.toLowerCase();
+
+		if (lower.contains("scy"))
+		{
+			return Weapon.SCYTHE;
+		}
+
+		if (lower.matches(".*\\b(sra|soulreaper|soul-reaper)\\b.*"))
+		{
+			return Weapon.SOULREAPER_AXE;
+		}
+
+		return null;
+	}
+
 	private String removeRoleLabel(String text)
 	{
 		return text.replaceAll("(?i) \\((Nfrz|Sfrz|Frz|Mdps|Rdps)\\)$", "");
+	}
+
+	private void loadWeaponIcons()
+	{
+		if (scytheIconIdx != -1 && sraIconIdx != -1)
+		{
+			return;
+		}
+
+		// Ensure loadAllSprites runs safely on the ClientThread
+		itemManager.getImage(ItemID.SCYTHE_OF_VITUR).onLoaded(() -> clientThread.invokeLater(this::loadAllSprites));
+		itemManager.getImage(ItemID.SOULREAPER_AXE_28338).onLoaded(() -> clientThread.invokeLater(this::loadAllSprites));
+	}
+
+	private void loadAllSprites()
+	{
+		IndexedSprite[] modIcons = client.getModIcons();
+		if (modIcons == null || (scytheIconIdx != -1 && sraIconIdx != -1))
+		{
+			return;
+		}
+
+		IndexedSprite scytheSprite = buildWeaponSprite(ItemID.SCYTHE_OF_VITUR, 16, 14, 5);
+		IndexedSprite sraSprite = buildWeaponSprite(ItemID.SOULREAPER_AXE_28338, 16, 16, 5);
+
+		// Ensure both images have finished loading before appending
+		if (scytheSprite == null || sraSprite == null)
+		{
+			return;
+		}
+
+		int startIdx = modIcons.length;
+		scytheIconIdx = startIdx;
+		sraIconIdx = startIdx + 1;
+
+		IndexedSprite[] newModIcons = Arrays.copyOf(modIcons, modIcons.length + 2);
+		newModIcons[scytheIconIdx] = scytheSprite;
+		newModIcons[sraIconIdx] = sraSprite;
+
+		client.setModIcons(newModIcons);
+	}
+
+	private IndexedSprite buildWeaponSprite(int itemId, int width, int height, int offsetY)
+	{
+		BufferedImage rawImage = itemManager.getImage(itemId);
+		if (rawImage == null)
+		{
+			return null;
+		}
+
+		BufferedImage cropped = cropTransparentPixels(rawImage);
+		if (cropped == null)
+		{
+			return null;
+		}
+
+		BufferedImage resizedImage = ImageUtil.resizeImage(cropped, width, height);
+		BufferedImage outlinedImage = addOutline(resizedImage);
+
+		IndexedSprite sprite = ImageUtil.getImageIndexedSprite(outlinedImage, client);
+		sprite.setOffsetY(offsetY);
+		return sprite;
+	}
+
+	private BufferedImage cropTransparentPixels(BufferedImage image)
+	{
+		int minX = image.getWidth();
+		int minY = image.getHeight();
+		int maxX = 0;
+		int maxY = 0;
+
+		for (int x = 0; x < image.getWidth(); x++)
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				if ((image.getRGB(x, y) >> 24) != 0)
+				{
+					minX = Math.min(minX, x);
+					maxX = Math.max(maxX, x);
+					minY = Math.min(minY, y);
+					maxY = Math.max(maxY, y);
+				}
+			}
+		}
+
+		if (maxX < minX || maxY < minY)
+		{
+			return null;
+		}
+
+		return image.getSubimage(
+			minX,
+			minY,
+			maxX - minX + 1,
+			maxY - minY + 1
+		);
+	}
+
+	private BufferedImage addOutline(BufferedImage image)
+	{
+		int width = image.getWidth() + 2;
+		int height = image.getHeight() + 2;
+
+		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+		// 1. Generate a dark silhouette matching the original alpha/transparency
+		BufferedImage silhouette = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		for (int x = 0; x < image.getWidth(); x++)
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				int argb = image.getRGB(x, y);
+				int alpha = (argb >> 24) & 0xFF;
+				if (alpha > 0)
+				{
+					// Set to black while keeping transparency
+					silhouette.setRGB(x, y, (alpha << 24));
+				}
+			}
+		}
+
+		java.awt.Graphics2D g = result.createGraphics();
+
+		// 2. Draw silhouette in 8 directions offset around center (1, 1)
+		int[] dx = {-1, 0, 1, -1, 1, -1, 0, 1};
+		int[] dy = {-1, -1, -1, 0, 0, 1, 1, 1};
+		for (int i = 0; i < 8; i++)
+		{
+			g.drawImage(silhouette, 1 + dx[i], 1 + dy[i], null);
+		}
+
+		// 3. Draw the sharp colored image on top in the center
+		g.drawImage(image, 1, 1, null);
+		g.dispose();
+
+		return result;
 	}
 
 	@Provides

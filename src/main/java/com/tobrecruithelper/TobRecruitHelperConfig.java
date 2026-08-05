@@ -41,4 +41,15 @@ public interface TobRecruitHelperConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "showWeaponIcons",
+		name = "Show weapon icons",
+		description = "Shows weapon icons next to player names in the Theatre of Blood party interface",
+		position = 4
+	)
+	default boolean showWeaponIcons()
+	{
+		return true;
+	}
 }
