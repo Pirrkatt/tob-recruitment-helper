@@ -20,12 +20,10 @@ import net.runelite.api.events.ChatMessage;
 import java.util.HashMap;
 import java.util.Map;
 import net.runelite.client.events.ConfigChanged;
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import net.runelite.api.ItemID;
 import net.runelite.api.IndexedSprite;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.util.ImageUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -128,8 +126,8 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		ApplicantInfo info = activeApplicants.get(jagexName);
 
-		Role role = parseRole(chatMessage.getMessage());
-		Weapon weapon = parseWeapon(chatMessage.getMessage());
+		Role role = ChatParser.parseRole(chatMessage.getMessage());
+		Weapon weapon = ChatParser.parseWeapon(chatMessage.getMessage());
 
 		boolean updated = false;
 
@@ -222,7 +220,7 @@ public class TobRecruitHelperPlugin extends Plugin
 				continue;
 			}
 
-			String originalName = removeRoleLabel(Text.removeTags(child.getText()).trim());
+			String originalName = ChatParser.removeRoleLabel(Text.removeTags(child.getText()).trim());
 
 			if (originalName.isEmpty() || originalName.equals("-"))
 			{
@@ -284,61 +282,6 @@ public class TobRecruitHelperPlugin extends Plugin
 		);
 	}
 
-	Role parseRole(String message)
-	{
-		String lower = message.toLowerCase();
-
-		if (lower.contains("nfrz") || lower.contains("nf"))
-		{
-			return Role.NFRZ;
-		}
-
-		if (lower.contains("sfrz") || lower.contains("sf"))
-		{
-			return Role.SFRZ;
-		}
-
-		if (lower.contains("mdps"))
-		{
-			return Role.MDPS;
-		}
-
-		if (lower.contains("rdps"))
-		{
-			return Role.RDPS;
-		}
-
-		// frz last so nfrz/sfrz has priority
-		if (lower.contains("frz"))
-		{
-			return Role.FRZ;
-		}
-
-		return null;
-	}
-
-	Weapon parseWeapon(String message)
-	{
-		String lower = message.toLowerCase();
-
-		if (lower.contains("scy"))
-		{
-			return Weapon.SCYTHE;
-		}
-
-		if (lower.matches(".*\\b(sra|soulreaper|soul-reaper)\\b.*"))
-		{
-			return Weapon.SOULREAPER_AXE;
-		}
-
-		return null;
-	}
-
-	private String removeRoleLabel(String text)
-	{
-		return text.replaceAll("(?i) \\((Nfrz|Sfrz|Frz|Mdps|Rdps)\\)$", "");
-	}
-
 	private void loadWeaponIcons()
 	{
 		if (scytheIconIdx != -1 && sraIconIdx != -1)
@@ -359,8 +302,8 @@ public class TobRecruitHelperPlugin extends Plugin
 			return;
 		}
 
-		IndexedSprite scytheSprite = buildWeaponSprite(ItemID.SCYTHE_OF_VITUR, 16, 14, 5);
-		IndexedSprite sraSprite = buildWeaponSprite(ItemID.SOULREAPER_AXE_28338, 16, 16, 5);
+		IndexedSprite scytheSprite = IconUtil.buildWeaponSprite(itemManager, client, ItemID.SCYTHE_OF_VITUR, 16, 14, 5);
+		IndexedSprite sraSprite = IconUtil.buildWeaponSprite(itemManager, client, ItemID.SOULREAPER_AXE_28338, 16, 16, 5);
 
 		// Ensure both images have finished loading before appending
 		if (scytheSprite == null || sraSprite == null)
@@ -377,102 +320,6 @@ public class TobRecruitHelperPlugin extends Plugin
 		newModIcons[sraIconIdx] = sraSprite;
 
 		client.setModIcons(newModIcons);
-	}
-
-	private IndexedSprite buildWeaponSprite(int itemId, int width, int height, int offsetY)
-	{
-		BufferedImage rawImage = itemManager.getImage(itemId);
-		if (rawImage == null)
-		{
-			return null;
-		}
-
-		BufferedImage cropped = cropTransparentPixels(rawImage);
-		if (cropped == null)
-		{
-			return null;
-		}
-
-		BufferedImage resizedImage = ImageUtil.resizeImage(cropped, width, height);
-		BufferedImage outlinedImage = addOutline(resizedImage);
-
-		IndexedSprite sprite = ImageUtil.getImageIndexedSprite(outlinedImage, client);
-		sprite.setOffsetY(offsetY);
-		return sprite;
-	}
-
-	private BufferedImage cropTransparentPixels(BufferedImage image)
-	{
-		int minX = image.getWidth();
-		int minY = image.getHeight();
-		int maxX = 0;
-		int maxY = 0;
-
-		for (int x = 0; x < image.getWidth(); x++)
-		{
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				if ((image.getRGB(x, y) >> 24) != 0)
-				{
-					minX = Math.min(minX, x);
-					maxX = Math.max(maxX, x);
-					minY = Math.min(minY, y);
-					maxY = Math.max(maxY, y);
-				}
-			}
-		}
-
-		if (maxX < minX || maxY < minY)
-		{
-			return null;
-		}
-
-		return image.getSubimage(
-			minX,
-			minY,
-			maxX - minX + 1,
-			maxY - minY + 1
-		);
-	}
-
-	private BufferedImage addOutline(BufferedImage image)
-	{
-		int width = image.getWidth() + 2;
-		int height = image.getHeight() + 2;
-
-		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-		// 1. Generate a dark silhouette matching the original alpha/transparency
-		BufferedImage silhouette = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		for (int x = 0; x < image.getWidth(); x++)
-		{
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				int argb = image.getRGB(x, y);
-				int alpha = (argb >> 24) & 0xFF;
-				if (alpha > 0)
-				{
-					// Set to black while keeping transparency
-					silhouette.setRGB(x, y, (alpha << 24));
-				}
-			}
-		}
-
-		java.awt.Graphics2D g = result.createGraphics();
-
-		// 2. Draw silhouette in 8 directions offset around center (1, 1)
-		int[] dx = {-1, 0, 1, -1, 1, -1, 0, 1};
-		int[] dy = {-1, -1, -1, 0, 0, 1, 1, 1};
-		for (int i = 0; i < 8; i++)
-		{
-			g.drawImage(silhouette, 1 + dx[i], 1 + dy[i], null);
-		}
-
-		// 3. Draw the sharp colored image on top in the center
-		g.drawImage(image, 1, 1, null);
-		g.dispose();
-
-		return result;
 	}
 
 	@Provides
