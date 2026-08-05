@@ -278,7 +278,7 @@ public class TobRecruitHelperPlugin extends Plugin
 
 	private String removeRoleLabel(String text)
 	{
-		return text.replaceAll(" \\((Nfrz|Sfrz|Frz|Mdps|Rdps)\\)$", "");
+		return text.replaceAll("(?i) \\((Nfrz|Sfrz|Frz|Mdps|Rdps)\\)$", "");
 	}
 
 	@Provides
