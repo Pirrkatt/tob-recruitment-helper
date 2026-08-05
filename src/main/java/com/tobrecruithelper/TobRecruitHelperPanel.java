@@ -14,6 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -52,13 +53,14 @@ public class TobRecruitHelperPanel extends PluginPanel
 		headerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		headerPanel.setBorder(new CompoundBorder(
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR),
-			new EmptyBorder(8, 10, 8, 10)
+			new EmptyBorder(20, 20, 20, 10)
 		));
 
 		headerLabel = new JLabel("Party Applicants (0)");
 		headerLabel.setFont(FontManager.getRunescapeBoldFont());
 		headerLabel.setForeground(Color.WHITE);
-		headerPanel.add(headerLabel, BorderLayout.WEST);
+		headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		headerPanel.add(headerLabel, BorderLayout.CENTER);
 
 		applicantsListPanel = new JPanel();
 		applicantsListPanel.setLayout(new BoxLayout(applicantsListPanel, BoxLayout.Y_AXIS));
@@ -72,6 +74,8 @@ public class TobRecruitHelperPanel extends PluginPanel
 
 		add(headerPanel, BorderLayout.NORTH);
 		add(scrollPane, BorderLayout.CENTER);
+
+		rebuild(new HashMap<>());
 	}
 
 	public void rebuild(Map<String, ApplicantInfo> applicants)
@@ -79,18 +83,28 @@ public class TobRecruitHelperPanel extends PluginPanel
 		SwingUtilities.invokeLater(() ->
 		{
 			applicantsListPanel.removeAll();
-			headerLabel.setText("Party Applicants (" + applicants.size() + ")");
+
+			// Update header with HTML for the dimmed number effect
+			headerLabel.setText("<html>Party Applicants <font color='#a5a5a5'>(" + applicants.size() + ")</font></html>");
 
 			// Clean up expansion tracking for applicants who left
 			expandedApplicants.retainAll(applicants.keySet());
 
 			if (applicants.isEmpty())
 			{
-				JLabel emptyLabel = new JLabel("No active applicants in lobby");
-				emptyLabel.setFont(FontManager.getRunescapeSmallFont());
-				emptyLabel.setForeground(Color.GRAY);
-				emptyLabel.setBorder(new EmptyBorder(10, 10, 10, 10));
-				applicantsListPanel.add(emptyLabel);
+				// Use standard font, multi-line HTML, and lighter gray color for empty state
+				JLabel emptyLabel = new JLabel("<html><center>No active applicants<br>in lobby</center></html>");
+				emptyLabel.setFont(FontManager.getRunescapeFont());
+				emptyLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+				emptyLabel.setHorizontalAlignment(SwingConstants.CENTER);
+				emptyLabel.setBorder(new EmptyBorder(2, 10, 10, 10)); // Push it down visually
+
+				// Wrap in a BorderLayout panel to force perfect horizontal centering
+				JPanel emptyWrapper = new JPanel(new BorderLayout());
+				emptyWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+				emptyWrapper.add(emptyLabel, BorderLayout.CENTER);
+
+				applicantsListPanel.add(emptyWrapper);
 			}
 			else
 			{
