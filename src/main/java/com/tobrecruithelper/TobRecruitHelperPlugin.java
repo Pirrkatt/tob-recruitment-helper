@@ -1,18 +1,26 @@
 package com.tobrecruithelper;
 
 import com.google.inject.Provides;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.kit.KitType;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.Text;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.api.MessageNode;
@@ -42,8 +50,13 @@ public class TobRecruitHelperPlugin extends Plugin
 	private int scytheIconIdx = -1;
 	private int sraIconIdx = -1;
 
+	private NavigationButton navButton;
+
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientToolbar clientToolbar;
 
 	@Inject
 	private ClientThread clientThread;
@@ -54,16 +67,45 @@ public class TobRecruitHelperPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
+	@Inject
+	private SpriteManager spriteManager;
+
+	@Inject
+	private TobRecruitHelperPanel panel;
+
 	@Override
 	protected void startUp()
 	{
 		clientThread.invokeLater(this::loadWeaponIcons);
+
+		// Use Scythe item image as side panel icon
+		AsyncBufferedImage icon = itemManager.getImage(ItemID.SCYTHE_OF_VITUR);
+
+		icon.onLoaded(() -> clientThread.invokeLater(() -> {
+			if (config.showSidePanel() && navButton == null)
+			{
+				navButton = NavigationButton.builder()
+					.tooltip("ToB Recruitment Helper")
+					.icon(icon)
+					.priority(99)
+					.panel(panel)
+					.build();
+
+				clientToolbar.addNavigation(navButton);
+			}
+		}));
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		activeApplicants.clear();
+
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+		}
 	}
 
 	@Subscribe
@@ -100,6 +142,32 @@ public class TobRecruitHelperPlugin extends Plugin
 		{
 			clientThread.invokeLater(this::updateLobbyRoles);
 		}
+
+		if (event.getKey().equals("showSidePanel"))
+		{
+			if (config.showSidePanel())
+			{
+				if (navButton == null)
+				{
+					AsyncBufferedImage icon = itemManager.getImage(ItemID.SCYTHE_OF_VITUR);
+					navButton = NavigationButton.builder()
+						.tooltip("ToB Recruitment Helper")
+						.icon(icon)
+						.priority(99)
+						.panel(panel)
+						.build();
+					clientToolbar.addNavigation(navButton);
+				}
+			}
+			else
+			{
+				if (navButton != null)
+				{
+					clientToolbar.removeNavigation(navButton);
+					navButton = null;
+				}
+			}
+		}
 	}
 
 	@Subscribe
@@ -128,6 +196,15 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		Role role = ChatParser.parseRole(chatMessage.getMessage());
 		Weapon weapon = ChatParser.parseWeapon(chatMessage.getMessage());
+
+		// Append recent message to history
+		info.addMessage(chatMessage.getMessage());
+
+		// Refresh side panel UI
+		if (panel != null)
+		{
+			panel.rebuild(activeApplicants);
+		}
 
 		boolean updated = false;
 
@@ -195,13 +272,31 @@ public class TobRecruitHelperPlugin extends Plugin
 		// Remove players who left the lobby
 		activeApplicants.keySet().retainAll(currentApplicants);
 
-		// Add new players with a null role (meaning they haven't spoken yet)
 		for (String applicant : currentApplicants)
 		{
-			activeApplicants.putIfAbsent(applicant, new ApplicantInfo());
+			ApplicantInfo info = activeApplicants.computeIfAbsent(applicant, k -> new ApplicantInfo());
+
+			// Check if applicant is loaded in world view to fetch equipment
+			Player player = findNearbyPlayer(applicant);
+			if (player != null && player.getPlayerComposition() != null)
+			{
+				for (KitType kitType : KitType.values())
+				{
+					int itemId = player.getPlayerComposition().getEquipmentId(kitType);
+					if (itemId != -1)
+					{
+						info.getEquipment().put(kitType, itemId);
+					}
+				}
+			}
 		}
 
 		updateLobbyRoles();
+
+		if (panel != null)
+		{
+			panel.rebuild(activeApplicants);
+		}
 	}
 
 	private void updateLobbyRoles()
@@ -242,6 +337,11 @@ public class TobRecruitHelperPlugin extends Plugin
 			if (config.showRoleLabels() && info.getRole() != null)
 			{
 				Role role = info.getRole();
+				String hex = role.getColorHex();
+				if (hex == null || hex.isEmpty() || hex.length() != 6)
+				{
+					hex = "ffffff";
+				}
 				text.append(" <col=").append(role.getColorHex()).append(">(")
 					.append(role.getLabel()).append(")</col>");
 			}
@@ -276,10 +376,12 @@ public class TobRecruitHelperPlugin extends Plugin
 
 	private String getHighlightColor()
 	{
-		return String.format(
-			"%06x",
-			config.applicantHighlightColor().getRGB() & 0xFFFFFF
-		);
+		Color color = config.applicantHighlightColor();
+		if (color == null)
+		{
+			return "ff9040";
+		}
+		return String.format("%06x", color.getRGB() & 0xFFFFFF);
 	}
 
 	private void loadWeaponIcons()
@@ -320,6 +422,23 @@ public class TobRecruitHelperPlugin extends Plugin
 		newModIcons[sraIconIdx] = sraSprite;
 
 		client.setModIcons(newModIcons);
+	}
+
+	private Player findNearbyPlayer(String jagexName)
+	{
+		if (client.getTopLevelWorldView() == null)
+		{
+			return null;
+		}
+
+		for (Player p : client.getTopLevelWorldView().players())
+		{
+			if (p != null && p.getName() != null && Text.toJagexName(p.getName()).equals(jagexName))
+			{
+				return p;
+			}
+		}
+		return null;
 	}
 
 	@Provides

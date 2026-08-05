@@ -27,12 +27,12 @@ public interface TobRecruitHelperConfig extends Config
 	)
 	String interfaceSection = "interfaceSection";
 
-//	@ConfigSection(
-//		name = "Side Panel",
-//		description = "Settings for the plugin side panel",
-//		position = 3
-//	)
-//	String sidePanelSection = "sidePanelSection";
+	@ConfigSection(
+		name = "Side Panel",
+		description = "Settings for the plugin side panel",
+		position = 3
+	)
+	String sidePanelSection = "sidePanelSection";
 
 	// ==========================================
 	// CHAT HIGHLIGHTING
@@ -86,6 +86,22 @@ public interface TobRecruitHelperConfig extends Config
 		section = interfaceSection
 	)
 	default boolean showWeaponIcons()
+	{
+		return true;
+	}
+
+	// ==========================================
+	// SIDE PANEL
+	// ==========================================
+
+	@ConfigItem(
+		keyName = "showSidePanel",
+		name = "Show side panel",
+		description = "Shows the side panel with information about applicants",
+		position = 1,
+		section = sidePanelSection
+	)
+	default boolean showSidePanel()
 	{
 		return true;
 	}
