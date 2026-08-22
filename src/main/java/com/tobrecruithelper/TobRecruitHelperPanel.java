@@ -20,13 +20,14 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import net.runelite.api.ItemID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
+import java.awt.GridLayout;
 
 @Singleton
 public class TobRecruitHelperPanel extends PluginPanel
@@ -49,7 +50,7 @@ public class TobRecruitHelperPanel extends PluginPanel
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
 		weaponIcons.put(Weapon.SCYTHE, itemManager.getImage(ItemID.SCYTHE_OF_VITUR));
-		weaponIcons.put(Weapon.SOULREAPER_AXE, itemManager.getImage(ItemID.SOULREAPER_AXE_28338));
+		weaponIcons.put(Weapon.SOULREAPER_AXE, itemManager.getImage(ItemID.SOULREAPER));
 
 		JPanel headerPanel = new JPanel(new BorderLayout());
 		headerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);

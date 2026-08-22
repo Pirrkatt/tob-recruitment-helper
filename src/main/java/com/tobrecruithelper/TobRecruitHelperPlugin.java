@@ -31,7 +31,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.api.MessageNode;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.api.ItemID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.IndexedSprite;
 import net.runelite.client.game.ItemManager;
 import net.runelite.api.events.GameTick;
@@ -421,7 +421,7 @@ public class TobRecruitHelperPlugin extends Plugin
 
 		// Ensure loadAllSprites runs safely on the ClientThread
 		itemManager.getImage(ItemID.SCYTHE_OF_VITUR).onLoaded(() -> clientThread.invokeLater(this::loadAllSprites));
-		itemManager.getImage(ItemID.SOULREAPER_AXE_28338).onLoaded(() -> clientThread.invokeLater(this::loadAllSprites));
+		itemManager.getImage(ItemID.SOULREAPER).onLoaded(() -> clientThread.invokeLater(this::loadAllSprites));
 	}
 
 	private void loadAllSprites()
@@ -433,7 +433,7 @@ public class TobRecruitHelperPlugin extends Plugin
 		}
 
 		IndexedSprite scytheSprite = IconUtil.buildWeaponSprite(itemManager, client, ItemID.SCYTHE_OF_VITUR, 16, 14, 5);
-		IndexedSprite sraSprite = IconUtil.buildWeaponSprite(itemManager, client, ItemID.SOULREAPER_AXE_28338, 16, 16, 5);
+		IndexedSprite sraSprite = IconUtil.buildWeaponSprite(itemManager, client, ItemID.SOULREAPER, 16, 16, 5);
 
 		// Ensure both images have finished loading before appending
 		if (scytheSprite == null || sraSprite == null)
