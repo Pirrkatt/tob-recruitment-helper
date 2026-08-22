@@ -7,11 +7,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
@@ -37,7 +39,7 @@ public class TobRecruitHelperPanel extends PluginPanel
 	private final Set<String> collapsedApplicants = new HashSet<>();
 
 	@Inject
-	public TobRecruitHelperPanel(ItemManager itemManager, SpriteManager spriteManager)
+	public TobRecruitHelperPanel(ItemManager itemManager, SpriteManager spriteManager, @Named("developerMode") boolean developerMode)
 	{
 		super(false);
 		this.itemManager = itemManager;
@@ -61,6 +63,27 @@ public class TobRecruitHelperPanel extends PluginPanel
 		headerLabel.setForeground(Color.WHITE);
 		headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		headerPanel.add(headerLabel, BorderLayout.CENTER);
+
+		if (developerMode)
+		{
+			JButton testButton = new JButton("Load Test Data");
+
+			testButton.addActionListener(e ->
+			{
+				toggleTestApplicants();
+
+				if (testDataLoaded)
+				{
+					testButton.setText("Clear Test Data");
+				}
+				else
+				{
+					testButton.setText("Load Test Data");
+				}
+			});
+
+			headerPanel.add(testButton, BorderLayout.EAST);
+		}
 
 		applicantsListPanel = new JPanel();
 		applicantsListPanel.setLayout(new BoxLayout(applicantsListPanel, BoxLayout.Y_AXIS));
@@ -137,5 +160,21 @@ public class TobRecruitHelperPanel extends PluginPanel
 			applicantsListPanel.revalidate();
 			applicantsListPanel.repaint();
 		});
+	}
+
+	private boolean testDataLoaded = false;
+
+	private void toggleTestApplicants()
+	{
+		if (testDataLoaded)
+		{
+			rebuild(new HashMap<>());
+			testDataLoaded = false;
+		}
+		else
+		{
+			rebuild(TestData.createApplicants());
+			testDataLoaded = true;
+		}
 	}
 }
