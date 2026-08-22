@@ -370,11 +370,11 @@ public class TobRecruitHelperPlugin extends Plugin
 			{
 				Role role = info.getRole();
 				String hex = role.getColorHex();
-				if (hex == null || hex.isEmpty() || hex.length() != 6)
+				if (hex == null || hex.length() != 6)
 				{
 					hex = "ffffff";
 				}
-				text.append(" <col=").append(role.getColorHex()).append(">(")
+				text.append(" <col=").append(hex).append(">(")
 					.append(role.getLabel()).append(")</col>");
 			}
 
