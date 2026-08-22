@@ -1,3 +1,7 @@
+<a href="https://ko-fi.com/pirrkatt" target="_blank">
+  <img height="36" src="https://storage.ko-fi.com/cdn/kofi2.png?v=3" alt="Buy Me a Coffee at ko-fi.com" />
+</a>
+
 # ToB Recruitment Helper
 
 A RuneLite plugin that helps you find Theatre of Blood teammates by highlighting applicants in chat and inspecting their gear.
