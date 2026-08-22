@@ -21,7 +21,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import net.runelite.api.SpriteID;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
@@ -307,23 +307,23 @@ public class ApplicantBoxPanel extends JPanel
 		switch (kitType)
 		{
 			case HEAD:
-				return SpriteID.EQUIPMENT_SLOT_HEAD;
+				return SpriteID.Wornicons.HEAD;
 			case CAPE:
-				return SpriteID.EQUIPMENT_SLOT_CAPE;
+				return SpriteID.Wornicons.CAPE;
 			case AMULET:
-				return SpriteID.EQUIPMENT_SLOT_NECK;
+				return SpriteID.Wornicons.NECK;
 			case WEAPON:
-				return SpriteID.EQUIPMENT_SLOT_WEAPON;
+				return SpriteID.Wornicons.WEAPON;
 			case TORSO:
-				return SpriteID.EQUIPMENT_SLOT_TORSO;
+				return SpriteID.Wornicons.TORSO;
 			case SHIELD:
-				return SpriteID.EQUIPMENT_SLOT_SHIELD;
+				return SpriteID.Wornicons.SHIELD;
 			case LEGS:
-				return SpriteID.EQUIPMENT_SLOT_LEGS;
+				return SpriteID.Wornicons.LEGS;
 			case HANDS:
-				return SpriteID.EQUIPMENT_SLOT_HANDS;
+				return SpriteID.Wornicons.HANDS;
 			case BOOTS:
-				return SpriteID.EQUIPMENT_SLOT_FEET;
+				return SpriteID.Wornicons.FEET;
 			default:
 				return -1;
 		}
