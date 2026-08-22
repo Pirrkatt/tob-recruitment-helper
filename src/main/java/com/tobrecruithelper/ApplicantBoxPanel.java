@@ -68,7 +68,7 @@ public class ApplicantBoxPanel extends JPanel
 		JPanel headerPanel = new JPanel(new BorderLayout(5, 0));
 		headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		headerPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-		headerPanel.setBorder(new EmptyBorder(2, 4, 2, 4));
+		headerPanel.setBorder(new EmptyBorder(6, 4, 6, 4));
 		headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JLabel nameLabel = new JLabel(name);
@@ -77,6 +77,17 @@ public class ApplicantBoxPanel extends JPanel
 
 		JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		rightHeader.setOpaque(false);
+
+		if (info.getWeapon() != null && weaponIcons.containsKey(info.getWeapon()))
+		{
+			JLabel weaponLabel = new JLabel();
+			AsyncBufferedImage icon = weaponIcons.get(info.getWeapon());
+			if (icon != null)
+			{
+				icon.addTo(weaponLabel);
+			}
+			rightHeader.add(weaponLabel);
+		}
 
 		if (info.getRole() != null)
 		{
@@ -91,17 +102,6 @@ public class ApplicantBoxPanel extends JPanel
 				roleLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 			}
 			rightHeader.add(roleLabel);
-		}
-
-		if (info.getWeapon() != null && weaponIcons.containsKey(info.getWeapon()))
-		{
-			JLabel weaponLabel = new JLabel();
-			AsyncBufferedImage icon = weaponIcons.get(info.getWeapon());
-			if (icon != null)
-			{
-				icon.addTo(weaponLabel);
-			}
-			rightHeader.add(weaponLabel);
 		}
 
 		JLabel toggleArrow = new JLabel(expanded ? "▼" : "▶");
