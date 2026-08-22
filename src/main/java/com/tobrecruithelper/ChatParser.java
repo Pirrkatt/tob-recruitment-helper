@@ -56,4 +56,12 @@ public class ChatParser
 	{
 		return text.replaceAll("(?i) \\((Nfrz|Sfrz|Frz|Mdps|Rdps)\\)$", "");
 	}
+
+	public static String escapeHtml(String text)
+	{
+		return text
+			.replace("&", "&amp;")
+			.replace("<", "&lt;")
+			.replace(">", "&gt;");
+	}
 }

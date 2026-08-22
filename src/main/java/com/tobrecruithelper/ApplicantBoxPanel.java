@@ -181,26 +181,27 @@ public class ApplicantBoxPanel extends JPanel
 			for (String msg : info.getRecentMessages())
 			{
 				if (count >= 5) break;
-				JLabel msgLabel = new JLabel("• " + msg);
-				msgLabel.setFont(FontManager.getRunescapeSmallFont());
+
+				JLabel msgLabel = new JLabel("<html><div style='width: 140px;'>• " + ChatParser.escapeHtml(msg) + "</div></html>");
 				msgLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+				msgLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 				chatList.add(msgLabel);
 				count++;
 			}
 		}
 
-		JScrollPane chatScroll = new JScrollPane(chatList);
-		chatScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		chatScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-		chatScroll.setBorder(null);
-		chatScroll.setOpaque(false);
-		chatScroll.getViewport().setOpaque(false);
+		JScrollPane chatPanel = new JScrollPane(chatList);
+		chatPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		chatPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		chatPanel.setBorder(null);
+		chatPanel.setOpaque(false);
+		chatPanel.getViewport().setOpaque(false);
 
-		chatScroll.setPreferredSize(new Dimension(175, 80));
-		chatScroll.setMaximumSize(new Dimension(175, 80));
-		chatScroll.setAlignmentX(Component.CENTER_ALIGNMENT);
+		chatPanel.setPreferredSize(new Dimension(200, 80));
+		chatPanel.setMaximumSize(new Dimension(200, 80));
+		chatPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		chatBox.add(chatScroll);
+		chatBox.add(chatPanel);
 		contentPanel.add(chatBox);
 
 		headerPanel.addMouseListener(new MouseAdapter()

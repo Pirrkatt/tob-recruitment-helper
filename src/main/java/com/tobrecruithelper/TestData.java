@@ -16,13 +16,14 @@ public class TestData
 		mdps.setWeapon(Weapon.SCYTHE);
 		mdps.addMessage("scythe");
 		mdps.addMessage("mdps");
+		mdps.addMessage("This is a really long chat message that should wrap across multiple lines inside the applicant box so we can verify that the text stays within the available width.");
 		mdps.getEquipment().put(KitType.WEAPON, ItemID.SCYTHE_OF_VITUR);
 
 		ApplicantInfo rdps = new ApplicantInfo();
-		rdps.setRole(Role.MDPS);
+		rdps.setRole(Role.RDPS);
 		rdps.setWeapon(Weapon.SOULREAPER_AXE);
 		rdps.addMessage("sra");
-		rdps.addMessage("mdps");
+		rdps.addMessage("rdps");
 		rdps.getEquipment().put(KitType.WEAPON, ItemID.SOULREAPER);
 
 		ApplicantInfo sfrz = new ApplicantInfo();
