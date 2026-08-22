@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -75,11 +76,14 @@ public class TobRecruitHelperPlugin extends Plugin
 	private SpriteManager spriteManager;
 
 	@Inject
+	private Provider<TobRecruitHelperPanel> panelProvider;
+
 	private TobRecruitHelperPanel panel;
 
 	@Override
 	protected void startUp()
 	{
+		panel = panelProvider.get();
 		clientThread.invokeLater(this::loadWeaponIcons);
 
 		// Use Scythe item image as side panel icon
