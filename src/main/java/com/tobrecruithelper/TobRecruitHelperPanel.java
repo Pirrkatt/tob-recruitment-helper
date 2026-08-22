@@ -2,6 +2,7 @@ package com.tobrecruithelper;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,7 +28,6 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
-import java.awt.GridLayout;
 
 @Singleton
 public class TobRecruitHelperPanel extends PluginPanel
@@ -83,7 +83,10 @@ public class TobRecruitHelperPanel extends PluginPanel
 				}
 			});
 
-			headerPanel.add(testButton, BorderLayout.EAST);
+			JPanel testButtonContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+			testButtonContainer.setOpaque(false);
+			testButtonContainer.add(testButton);
+			headerPanel.add(testButtonContainer, BorderLayout.EAST);
 		}
 
 		applicantsListPanel = new JPanel();
